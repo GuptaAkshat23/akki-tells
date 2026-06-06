@@ -17,8 +17,8 @@ function WriteForm() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    // Check if already authed this session
-    if (sessionStorage.getItem('blog_authed') === '1') setAuthed(true)
+    // Check authed state by pinging the server
+    fetch('/api/auth/check').then(r => { if (r.ok) setAuthed(true) })
   }, [])
 
   useEffect(() => {
@@ -40,7 +40,6 @@ function WriteForm() {
       body: JSON.stringify({ password }),
     })
     if (res.ok) {
-      sessionStorage.setItem('blog_authed', '1')
       setAuthed(true)
     } else {
       setAuthError('wrong password')

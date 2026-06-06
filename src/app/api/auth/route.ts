@@ -12,5 +12,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'wrong password' }, { status: 401 })
   }
 
-  return NextResponse.json({ ok: true })
+  const res = NextResponse.json({ ok: true })
+  res.cookies.set('blog_authed', correct, {
+    httpOnly: true,
+    sameSite: 'strict',
+    path: '/',
+    maxAge: 60 * 60 * 24 * 7, // 1 week
+  })
+  return res
+}
+
+export async function DELETE() {
+  const res = NextResponse.json({ ok: true })
+  res.cookies.delete('blog_authed')
+  return res
 }

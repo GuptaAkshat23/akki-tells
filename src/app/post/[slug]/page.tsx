@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { formatDate } from '@/lib/utils'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { cookies } from 'next/headers'
 import DeleteButton from './DeleteButton'
 
 export const revalidate = 0
@@ -17,6 +18,9 @@ export default async function PostPage({ params }: Props) {
 
   if (!post) notFound()
 
+  const cookieStore = cookies()
+  const isOwner = cookieStore.get('blog_authed')?.value === process.env.BLOG_PASSWORD
+
   return (
     <article style={{ paddingBottom: '4rem' }}>
       <Link href="/" className="back-link">← all posts</Link>
@@ -28,10 +32,12 @@ export default async function PostPage({ params }: Props) {
         </p>
       </div>
       <div className="post-body">{post.body}</div>
-      <div className="post-actions">
-        <Link href={`/write?edit=${post.id}`} className="btn">edit</Link>
-        <DeleteButton id={post.id} />
-      </div>
+      {isOwner && (
+        <div className="post-actions">
+          <Link href={`/write?edit=${post.id}`} className="btn">edit</Link>
+          <DeleteButton id={post.id} />
+        </div>
+      )}
     </article>
   )
 }
