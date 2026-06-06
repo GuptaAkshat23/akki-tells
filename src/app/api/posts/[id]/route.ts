@@ -7,8 +7,8 @@ interface Params {
 }
 
 function isAuthed(req: NextRequest): boolean {
-  const cookie = req.cookies.get('blog_authed')?.value
-  return cookie === process.env.BLOG_PASSWORD
+  const token = req.headers.get('x-blog-password')
+  return !!token && token === process.env.BLOG_PASSWORD
 }
 
 export async function GET(_req: NextRequest, { params }: Params) {
@@ -18,26 +18,20 @@ export async function GET(_req: NextRequest, { params }: Params) {
 }
 
 export async function PUT(req: NextRequest, { params }: Params) {
-  if (!isAuthed(req)) {
+  if (!isAuthed(req))
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-  }
 
   const { title, body } = await req.json()
-
-  if (!title?.trim() || !body?.trim()) {
+  if (!title?.trim() || !body?.trim())
     return NextResponse.json({ error: 'title and body are required' }, { status: 400 })
-  }
 
   const existing = await prisma.post.findUnique({ where: { id: params.id } })
   if (!existing) return NextResponse.json({ error: 'not found' }, { status: 404 })
 
-  // Regenerate slug only if title changed
   let slug = existing.slug
   if (title.trim() !== existing.title) {
     slug = slugify(title)
-    const taken = await prisma.post.findFirst({
-      where: { slug, NOT: { id: params.id } },
-    })
+    const taken = await prisma.post.findFirst({ where: { slug, NOT: { id: params.id } } })
     if (taken) slug = `${slug}-${Date.now()}`
   }
 
@@ -45,14 +39,12 @@ export async function PUT(req: NextRequest, { params }: Params) {
     where: { id: params.id },
     data: { title: title.trim(), slug, body: body.trim() },
   })
-
   return NextResponse.json(post)
 }
 
 export async function DELETE(req: NextRequest, { params }: Params) {
-  if (!isAuthed(req)) {
+  if (!isAuthed(req))
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-  }
 
   const existing = await prisma.post.findUnique({ where: { id: params.id } })
   if (!existing) return NextResponse.json({ error: 'not found' }, { status: 404 })
